@@ -14,85 +14,95 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Helvetica Neue', Arial, sans-serif;
+            background: #000000;
+            color: #ffffff;
             min-height: 100vh;
-            padding: 20px;
+            overflow-x: hidden;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 100%;
             margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
+            background: #000000;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
+            background: #000000;
+            color: #ffffff;
+            padding: 20px 40px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 1.8em;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin: 0;
         }
 
         .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
+            font-size: 0.85em;
+            opacity: 0.6;
+            font-weight: 400;
+            margin: 0;
         }
 
         .content {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 30px;
-            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 80px);
         }
 
         .input-panel {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 10px;
-            height: fit-content;
+            background: #000000;
+            padding: 20px 40px;
+            border-bottom: 1px solid #333;
+            flex-shrink: 0;
         }
 
-        .input-panel h2 {
-            color: #333;
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
             margin-bottom: 20px;
-            font-size: 1.5em;
         }
 
         .input-group {
-            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .input-group label {
             display: block;
-            color: #555;
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 0.95em;
+            color: #999;
+            font-weight: 500;
+            margin-bottom: 6px;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .input-group input,
         .input-group select {
             width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 1em;
-            transition: border-color 0.3s;
-            background: white;
+            padding: 8px 12px;
+            border: 1px solid #333;
+            border-radius: 2px;
+            font-size: 0.9em;
+            transition: border-color 0.2s, background-color 0.2s;
+            background: #111;
+            color: #fff;
         }
 
         .input-group input:focus,
         .input-group select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #fff;
+            background: #1a1a1a;
         }
 
         .input-group select {
@@ -100,142 +110,188 @@
         }
 
         .input-group small {
-            display: block;
-            color: #888;
-            margin-top: 3px;
-            font-size: 0.85em;
+            display: none;
         }
 
         .boundary-group {
             display: grid;
             grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .boundary-group input {
+            font-size: 0.85em;
+            padding: 6px 10px;
+        }
+
+        .action-bar {
+            display: flex;
             gap: 10px;
-            margin-top: 10px;
+            align-items: center;
         }
 
         .btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 1.1em;
+            padding: 10px 24px;
+            background: #ffffff;
+            color: #000000;
+            border: 1px solid #ffffff;
+            border-radius: 2px;
+            font-size: 0.85em;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-top: 10px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            background: #000000;
+            color: #ffffff;
         }
 
         .btn:active {
-            transform: translateY(0);
+            transform: scale(0.98);
         }
 
         .btn:disabled {
-            background: #ccc;
+            background: #333;
+            border-color: #333;
+            color: #666;
             cursor: not-allowed;
-            transform: none;
         }
 
         .btn-stop {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            margin-top: 5px;
+            background: #ff0000;
+            border-color: #ff0000;
+            color: #ffffff;
+        }
+
+        .btn-stop:hover {
+            background: #cc0000;
+            border-color: #cc0000;
         }
 
         .btn-gif {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-            margin-top: 5px;
+            background: transparent;
+            border-color: #ffffff;
+            color: #ffffff;
+        }
+
+        .btn-gif:hover {
+            background: #ffffff;
+            color: #000000;
         }
 
         .gif-preview {
-            margin-top: 20px;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 30px;
+            background: #000;
+            border: 1px solid #fff;
             text-align: center;
             display: none;
+            z-index: 1000;
+            max-width: 90%;
+            max-height: 90%;
         }
 
         .gif-preview h3 {
-            color: #333;
-            margin-bottom: 15px;
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
         }
 
         .gif-preview img {
             max-width: 100%;
-            border-radius: 5px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border: 1px solid #333;
         }
 
         .gif-actions {
-            margin-top: 15px;
+            margin-top: 20px;
             display: flex;
             gap: 10px;
             justify-content: center;
         }
 
         .btn-small {
-            padding: 10px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 0.9em;
+            padding: 8px 20px;
+            background: transparent;
+            color: #fff;
+            border: 1px solid #fff;
+            border-radius: 2px;
+            font-size: 0.75em;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .btn-small:hover {
-            transform: translateY(-2px);
+            background: #fff;
+            color: #000;
         }
 
         .visualization-panel {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 10px;
+            background: #000;
+            padding: 20px 40px;
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         #plot {
             width: 100%;
-            height: 600px;
-            border-radius: 10px;
-            overflow: hidden;
+            height: 100%;
+            flex: 1;
         }
 
         .status {
-            margin-top: 15px;
-            padding: 15px;
-            background: white;
-            border-radius: 5px;
-            border-left: 4px solid #667eea;
+            display: flex;
+            gap: 30px;
+            padding: 10px 0;
+            border-top: 1px solid #333;
+            margin-top: 10px;
         }
 
         .status-item {
             display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
-            font-size: 0.95em;
+            gap: 10px;
+            font-size: 0.75em;
         }
 
         .status-label {
-            color: #555;
-            font-weight: 600;
+            color: #666;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .status-value {
-            color: #333;
+            color: #fff;
             font-family: 'Courier New', monospace;
         }
 
         @media (max-width: 1024px) {
-            .content {
+            .controls-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .controls-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
             }
         }
     </style>
@@ -243,136 +299,132 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔥 2D Transient Heat Transfer Simulator</h1>
-            <p>Numerical Solution using Finite Difference Method</p>
+            <div>
+                <h1>2D Heat Transfer</h1>
+                <p>Finite Difference Method Simulator</p>
+            </div>
         </div>
 
         <div class="content">
             <div class="input-panel">
-                <h2>⚙️ Parameters</h2>
+                <div class="controls-grid">
 
-                <div class="input-group">
-                    <label>Length (x-direction) [m]</label>
-                    <input type="number" id="length" value="1.0" step="0.1" min="0.1">
-                    <small>Domain length in x-direction</small>
-                </div>
+                    <div class="input-group">
+                        <label>Length [m]</label>
+                        <input type="number" id="length" value="1.0" step="0.1" min="0.1">
+                    </div>
 
-                <div class="input-group">
-                    <label>Width (y-direction) [m]</label>
-                    <input type="number" id="width" value="1.0" step="0.1" min="0.1">
-                    <small>Domain length in y-direction</small>
-                </div>
+                    <div class="input-group">
+                        <label>Width [m]</label>
+                        <input type="number" id="width" value="1.0" step="0.1" min="0.1">
+                    </div>
 
-                <div class="input-group">
-                    <label>Boundary Temperatures [°C]</label>
-                    <div class="boundary-group">
-                        <div>
-                            <input type="number" id="temp_top" value="100" step="1" placeholder="Top">
-                            <small>Top (y=width)</small>
-                        </div>
-                        <div>
-                            <input type="number" id="temp_bottom" value="0" step="1" placeholder="Bottom">
-                            <small>Bottom (y=0)</small>
-                        </div>
-                        <div>
-                            <input type="number" id="temp_left" value="27" step="1" placeholder="Left">
-                            <small>Left (x=0)</small>
-                        </div>
-                        <div>
-                            <input type="number" id="temp_right" value="27" step="1" placeholder="Right">
-                            <small>Right (x=length)</small>
-                        </div>
+                    <div class="input-group">
+                        <label>Top Temp [°C]</label>
+                        <input type="number" id="temp_top" value="100" step="1">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Bottom Temp [°C]</label>
+                        <input type="number" id="temp_bottom" value="0" step="1">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Left Temp [°C]</label>
+                        <input type="number" id="temp_left" value="27" step="1">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Right Temp [°C]</label>
+                        <input type="number" id="temp_right" value="27" step="1">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Material</label>
+                        <select id="material_preset" onchange="loadMaterialProperties()">
+                            <option value="custom">Custom</option>
+                            <option value="carbon_steel" selected>Carbon Steel</option>
+                            <option value="aluminum">Aluminum</option>
+                            <option value="abs_plastic">ABS Plastic</option>
+                            <option value="ceramic">Ceramic</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Conductivity [W/m·K]</label>
+                        <input type="number" id="conductivity" value="50" step="1" min="0.01" onchange="setCustomMaterial()">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Density [kg/m³]</label>
+                        <input type="number" id="density" value="7850" step="100" min="1" onchange="setCustomMaterial()">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Specific Heat [J/kg·K]</label>
+                        <input type="number" id="specific_heat" value="490" step="10" min="1" onchange="setCustomMaterial()">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Simulation Time [s]</label>
+                        <input type="number" id="sim_time" value="100" step="10" min="1">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Grid X</label>
+                        <input type="number" id="grid_x" value="50" step="5" min="10" max="200">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Grid Y</label>
+                        <input type="number" id="grid_y" value="50" step="5" min="10" max="200">
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label>Material Preset</label>
-                    <select id="material_preset" onchange="loadMaterialProperties()">
-                        <option value="custom">Custom</option>
-                        <option value="carbon_steel" selected>Carbon Steel</option>
-                        <option value="aluminum">Aluminum</option>
-                        <option value="abs_plastic">ABS Plastic</option>
-                        <option value="ceramic">Ceramic</option>
-                    </select>
-                    <small>Select material or use custom values</small>
-                </div>
+                <div class="action-bar">
+                    <button class="btn" id="startBtn" onclick="startSimulation()">Start</button>
+                    <button class="btn btn-stop" id="stopBtn" onclick="stopSimulation()" disabled>Stop</button>
+                    <button class="btn btn-gif" id="gifBtn" onclick="exportGIF()" disabled>Export GIF</button>
 
-                <div class="input-group">
-                    <label>Thermal Conductivity [W/m·K]</label>
-                    <input type="number" id="conductivity" value="50" step="1" min="0.01" onchange="setCustomMaterial()">
-                    <small>Material thermal conductivity</small>
-                </div>
+                    <div style="flex: 1;"></div>
 
-                <div class="input-group">
-                    <label>Density [kg/m³]</label>
-                    <input type="number" id="density" value="7850" step="100" min="1" onchange="setCustomMaterial()">
-                    <small>Material density</small>
-                </div>
-
-                <div class="input-group">
-                    <label>Specific Heat [J/kg·K]</label>
-                    <input type="number" id="specific_heat" value="490" step="10" min="1" onchange="setCustomMaterial()">
-                    <small>Material specific heat capacity</small>
-                </div>
-
-                <div class="input-group">
-                    <label>Simulation Time [s]</label>
-                    <input type="number" id="sim_time" value="100" step="10" min="1">
-                    <small>Total simulation duration</small>
-                </div>
-
-                <div class="input-group">
-                    <label>Grid Points (x)</label>
-                    <input type="number" id="grid_x" value="50" step="5" min="10" max="200">
-                    <small>Spatial discretization in x</small>
-                </div>
-
-                <div class="input-group">
-                    <label>Grid Points (y)</label>
-                    <input type="number" id="grid_y" value="50" step="5" min="10" max="200">
-                    <small>Spatial discretization in y</small>
-                </div>
-
-                <button class="btn" id="startBtn" onclick="startSimulation()">▶️ Start Simulation</button>
-                <button class="btn btn-stop" id="stopBtn" onclick="stopSimulation()" disabled>⏹️ Stop</button>
-                <button class="btn btn-gif" id="gifBtn" onclick="exportGIF()" disabled>📸 Create GIF</button>
-
-                <div class="gif-preview" id="gifPreview">
-                    <h3>🎬 Generated GIF Animation</h3>
-                    <img id="gifImage" src="" alt="Generated GIF">
-                    <div class="gif-actions">
-                        <button class="btn-small" onclick="downloadGIF()">💾 Download</button>
-                        <button class="btn-small" onclick="closeGifPreview()">✕ Close</button>
-                    </div>
-                </div>
-
-                <div class="status" id="status">
                     <div class="status-item">
-                        <span class="status-label">Status:</span>
+                        <span class="status-label">Status</span>
                         <span class="status-value" id="statusText">Ready</span>
                     </div>
                     <div class="status-item">
-                        <span class="status-label">Time:</span>
+                        <span class="status-label">Time</span>
                         <span class="status-value" id="timeText">0.00 s</span>
                     </div>
                     <div class="status-item">
-                        <span class="status-label">Progress:</span>
+                        <span class="status-label">Progress</span>
                         <span class="status-value" id="progressText">0%</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Δt:</span>
-                        <span class="status-value" id="dtText">- s</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Fourier:</span>
-                        <span class="status-value" id="fourierText">-</span>
                     </div>
                 </div>
             </div>
 
             <div class="visualization-panel">
                 <div id="plot"></div>
+                <div class="status">
+                    <div class="status-item">
+                        <span class="status-label">Δt</span>
+                        <span class="status-value" id="dtText">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Fourier</span>
+                        <span class="status-value" id="fourierText">-</span>
+                    </div>
+                </div>
             </div>
+        </div>
+    </div>
+
+    <div class="gif-preview" id="gifPreview">
+        <h3>Generated GIF</h3>
+        <img id="gifImage" src="" alt="Generated GIF">
+        <div class="gif-actions">
+            <button class="btn-small" onclick="downloadGIF()">Download</button>
+            <button class="btn-small" onclick="closeGifPreview()">Close</button>
         </div>
     </div>
 
@@ -647,33 +699,53 @@
                 zmin: T_min,
                 zmax: T_max,
                 colorbar: {
-                    title: 'Temperature [°C]',
+                    title: {
+                        text: 'T [°C]',
+                        font: { color: '#999', size: 11 }
+                    },
                     titleside: 'right',
                     tickmode: 'linear',
                     tick0: T_min,
-                    dtick: (T_max - T_min) / 10
+                    dtick: (T_max - T_min) / 10,
+                    tickfont: { color: '#666', size: 10 },
+                    outlinecolor: '#333',
+                    outlinewidth: 1,
+                    bgcolor: '#000'
                 }
             }];
 
             const layout = {
-                title: `Temperature Distribution (t = ${solver.currentTime.toFixed(2)} s)`,
+                title: {
+                    text: `t = ${solver.currentTime.toFixed(2)} s`,
+                    font: { color: '#ffffff', size: 14, family: 'monospace' },
+                    x: 0.02,
+                    xanchor: 'left'
+                },
                 xaxis: {
-                    title: 'x [m]',
+                    title: { text: 'x [m]', font: { color: '#999', size: 11 } },
                     range: [0, solver.L],
                     tickmode: 'linear',
                     tick0: 0,
-                    dtick: solver.L / 5
+                    dtick: solver.L / 5,
+                    gridcolor: '#222',
+                    zerolinecolor: '#333',
+                    color: '#666'
                 },
                 yaxis: {
-                    title: 'y [m]',
+                    title: { text: 'y [m]', font: { color: '#999', size: 11 } },
                     range: [0, solver.W],
                     tickmode: 'linear',
                     tick0: 0,
                     dtick: solver.W / 5,
-                    scaleanchor: 'x'
+                    scaleanchor: 'x',
+                    gridcolor: '#222',
+                    zerolinecolor: '#333',
+                    color: '#666'
                 },
+                paper_bgcolor: '#000000',
+                plot_bgcolor: '#000000',
                 autosize: true,
-                margin: { t: 60, r: 100, b: 60, l: 60 }
+                margin: { t: 40, r: 120, b: 50, l: 60 }
             };
 
             const config = {
@@ -691,7 +763,7 @@
             Plotly.update('plot', {
                 z: [z]
             }, {
-                title: `Temperature Distribution (t = ${solver.currentTime.toFixed(2)} s)`
+                'title.text': `t = ${solver.currentTime.toFixed(2)} s`
             });
         }
 
