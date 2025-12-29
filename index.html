@@ -664,11 +664,7 @@
             document.getElementById('startBtn').disabled = false;
             document.getElementById('stopBtn').disabled = true;
 
-            // Enable GIF export if we have frames
-            if (capturedFrames.length > 0) {
-                document.getElementById('gifBtn').disabled = false;
-            }
-
+            // GIF button is already enabled during animation if frames exist
             document.getElementById('statusText').textContent = 'Stopped';
         }
 
@@ -785,9 +781,14 @@
             // Update plot every frame
             updatePlot(solver);
 
-            // Capture frame for GIF (every ~100 frames to keep file size manageable)
-            if (capturedFrames.length < 100 && Math.floor(solver.currentTime / solver.totalTime * 100) > capturedFrames.length) {
+            // Capture frame for GIF (limit to 30 frames for faster GIF generation on mobile)
+            if (capturedFrames.length < 30 && Math.floor(solver.currentTime / solver.totalTime * 30) > capturedFrames.length) {
                 captureFrame();
+            }
+
+            // Enable GIF button as soon as we have frames
+            if (capturedFrames.length > 0 && document.getElementById('gifBtn').disabled) {
+                document.getElementById('gifBtn').disabled = false;
             }
 
             // Update status
@@ -801,11 +802,11 @@
         async function captureFrame() {
             const plotDiv = document.getElementById('plot');
 
-            // Convert plot to image data
+            // Convert plot to image data (reduced resolution for faster GIF encoding)
             const imgData = await Plotly.toImage(plotDiv, {
                 format: 'png',
-                width: 800,
-                height: 600
+                width: 640,
+                height: 480
             });
 
             capturedFrames.push(imgData);
@@ -819,37 +820,49 @@
             }
 
             document.getElementById('gifBtn').disabled = true;
-            document.getElementById('statusText').textContent = 'Creating GIF...';
+            document.getElementById('statusText').textContent = 'Creating GIF (0%)...';
 
             try {
                 // Create GIF encoder (workers: 0 = no web workers, runs on main thread)
                 // This avoids cross-origin security warnings on iOS Safari/Firefox
+                // Optimized settings: reduced resolution, medium quality for faster encoding
                 const gif = new GIF({
                     workers: 0,
-                    quality: 10,
-                    width: 800,
-                    height: 600
+                    quality: 20,  // 1-30 scale, higher = faster but lower quality (20 = medium)
+                    width: 640,
+                    height: 480
                 });
 
-                // Add frames to GIF
+                // Add frames to GIF with progress indicator
                 for (let i = 0; i < capturedFrames.length; i++) {
                     const img = new Image();
                     await new Promise((resolve) => {
                         img.onload = () => {
                             // Create canvas to draw image
                             const canvas = document.createElement('canvas');
-                            canvas.width = 800;
-                            canvas.height = 600;
+                            canvas.width = 640;
+                            canvas.height = 480;
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0);
 
                             // Add frame with delay
                             gif.addFrame(canvas, {delay: 200});  // 200ms per frame
+
+                            // Update progress
+                            const progress = Math.round((i + 1) / capturedFrames.length * 50);
+                            document.getElementById('statusText').textContent = `Creating GIF (${progress}%)...`;
+
                             resolve();
                         };
                         img.src = capturedFrames[i];
                     });
                 }
+
+                // Show rendering progress
+                gif.on('progress', (progress) => {
+                    const percent = Math.round(50 + progress * 50); // 50-100%
+                    document.getElementById('statusText').textContent = `Creating GIF (${percent}%)...`;
+                });
 
                 // Render GIF
                 gif.on('finished', (blob) => {
@@ -871,6 +884,8 @@
                     document.getElementById('gifPreview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 });
 
+                // Update status before rendering starts
+                document.getElementById('statusText').textContent = 'Creating GIF (50%)...';
                 gif.render();
 
             } catch (error) {
