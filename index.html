@@ -422,7 +422,6 @@
         <h3>Generated Video</h3>
         <video id="videoPlayer" controls loop autoplay></video>
         <div class="video-actions">
-            <button class="btn-small" onclick="downloadVideo()">Download MP4</button>
             <button class="btn-small" onclick="closeVideoPreview()">Close</button>
         </div>
     </div>
@@ -558,7 +557,7 @@
             // Draw each pixel
             for (let j = 0; j < solver.ny; j++) {
                 for (let i = 0; i < solver.nx; i++) {
-                    const temp = z[solver.ny - 1 - j][i]; // Flip y-axis
+                    const temp = z[j][i]; // z is already correctly oriented
                     const color = temperatureToColor(temp, T_min_global, T_max_global);
 
                     const idx = (j * solver.nx + i) * 4;
@@ -867,21 +866,6 @@
                     console.log('VP9 not supported, video export unavailable');
                 }
             }
-        }
-
-        function downloadVideo() {
-            if (!videoBlob) {
-                alert('No video available to download.');
-                return;
-            }
-
-            // Download video
-            const url = URL.createObjectURL(videoBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'heat_transfer_simulation.webm';
-            a.click();
-            URL.revokeObjectURL(url);
         }
 
         function closeVideoPreview() {
