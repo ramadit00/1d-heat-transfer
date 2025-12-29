@@ -78,18 +78,25 @@
             font-size: 0.95em;
         }
 
-        .input-group input {
+        .input-group input,
+        .input-group select {
             width: 100%;
             padding: 10px;
             border: 2px solid #ddd;
             border-radius: 5px;
             font-size: 1em;
             transition: border-color 0.3s;
+            background: white;
         }
 
-        .input-group input:focus {
+        .input-group input:focus,
+        .input-group select:focus {
             outline: none;
             border-color: #667eea;
+        }
+
+        .input-group select {
+            cursor: pointer;
         }
 
         .input-group small {
@@ -279,20 +286,32 @@
                 </div>
 
                 <div class="input-group">
+                    <label>Material Preset</label>
+                    <select id="material_preset" onchange="loadMaterialProperties()">
+                        <option value="custom">Custom</option>
+                        <option value="carbon_steel" selected>Carbon Steel</option>
+                        <option value="aluminum">Aluminum</option>
+                        <option value="abs_plastic">ABS Plastic</option>
+                        <option value="ceramic">Ceramic</option>
+                    </select>
+                    <small>Select material or use custom values</small>
+                </div>
+
+                <div class="input-group">
                     <label>Thermal Conductivity [W/m·K]</label>
-                    <input type="number" id="conductivity" value="50" step="1" min="0.1">
+                    <input type="number" id="conductivity" value="50" step="1" min="0.01" onchange="setCustomMaterial()">
                     <small>Material thermal conductivity</small>
                 </div>
 
                 <div class="input-group">
                     <label>Density [kg/m³]</label>
-                    <input type="number" id="density" value="7800" step="100" min="1">
+                    <input type="number" id="density" value="7850" step="100" min="1" onchange="setCustomMaterial()">
                     <small>Material density</small>
                 </div>
 
                 <div class="input-group">
                     <label>Specific Heat [J/kg·K]</label>
-                    <input type="number" id="specific_heat" value="500" step="10" min="1">
+                    <input type="number" id="specific_heat" value="490" step="10" min="1" onchange="setCustomMaterial()">
                     <small>Material specific heat capacity</small>
                 </div>
 
@@ -364,6 +383,55 @@
         let frameCaptureTimes = [];
         let gifEncoder = null;
         let gifBlob = null;  // Store the generated GIF blob
+
+        // Material properties database
+        const materialProperties = {
+            carbon_steel: {
+                name: 'Carbon Steel',
+                conductivity: 50,
+                density: 7850,
+                specific_heat: 490
+            },
+            aluminum: {
+                name: 'Aluminum',
+                conductivity: 205,
+                density: 2700,
+                specific_heat: 900
+            },
+            abs_plastic: {
+                name: 'ABS Plastic',
+                conductivity: 0.2,
+                density: 1050,
+                specific_heat: 1400
+            },
+            ceramic: {
+                name: 'Ceramic',
+                conductivity: 2.5,
+                density: 2500,
+                specific_heat: 900
+            }
+        };
+
+        // Load material properties when preset is selected
+        function loadMaterialProperties() {
+            const preset = document.getElementById('material_preset').value;
+
+            if (preset === 'custom') {
+                return; // Don't change values for custom
+            }
+
+            const material = materialProperties[preset];
+            if (material) {
+                document.getElementById('conductivity').value = material.conductivity;
+                document.getElementById('density').value = material.density;
+                document.getElementById('specific_heat').value = material.specific_heat;
+            }
+        }
+
+        // Set to custom when user manually changes values
+        function setCustomMaterial() {
+            document.getElementById('material_preset').value = 'custom';
+        }
 
         class HeatTransferSolver {
             constructor(params) {
