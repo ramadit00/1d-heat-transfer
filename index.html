@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2D Transient Heat Transfer Simulator</title>
-    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -231,12 +230,23 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
-        #plot {
-            width: 100%;
-            height: 100%;
+        #canvas {
+            border: 1px solid #333;
+            max-width: 100%;
+            max-height: 100%;
+            image-rendering: pixelated;
+        }
+
+        .canvas-container {
             flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
         }
 
         .status {
@@ -391,7 +401,9 @@
             </div>
 
             <div class="visualization-panel">
-                <div id="plot"></div>
+                <div class="canvas-container">
+                    <canvas id="canvas"></canvas>
+                </div>
                 <div class="status">
                     <div class="status-item">
                         <span class="status-label">Δt</span>
@@ -421,6 +433,8 @@
         let capturedFrames = [];
         let frameCaptureTimes = [];
         let videoBlob = null;  // Store the generated video blob
+        let canvas, ctx;
+        let T_min_global, T_max_global;
 
         // Material properties database
         const materialProperties = {
@@ -469,6 +483,93 @@
         // Set to custom when user manually changes values
         function setCustomMaterial() {
             document.getElementById('material_preset').value = 'custom';
+        }
+
+        // Color mapping function: temperature to RGB
+        function temperatureToColor(temp, T_min, T_max) {
+            // Normalize temperature to 0-1 range
+            const norm = (temp - T_min) / (T_max - T_min);
+
+            // Color scale from blue (cold) to red (hot)
+            // 0: rgb(0,0,131) - Deep blue
+            // 0.2: rgb(0,60,170)
+            // 0.4: rgb(5,255,255) - Cyan
+            // 0.6: rgb(255,255,0) - Yellow
+            // 0.8: rgb(250,0,0) - Red
+            // 1: rgb(128,0,0) - Dark red
+
+            let r, g, b;
+
+            if (norm < 0.2) {
+                const t = norm / 0.2;
+                r = 0;
+                g = Math.floor(60 * t);
+                b = Math.floor(131 + (170 - 131) * t);
+            } else if (norm < 0.4) {
+                const t = (norm - 0.2) / 0.2;
+                r = Math.floor(5 * t);
+                g = Math.floor(60 + (255 - 60) * t);
+                b = Math.floor(170 + (255 - 170) * t);
+            } else if (norm < 0.6) {
+                const t = (norm - 0.4) / 0.2;
+                r = Math.floor(5 + (255 - 5) * t);
+                g = 255;
+                b = Math.floor(255 * (1 - t));
+            } else if (norm < 0.8) {
+                const t = (norm - 0.6) / 0.2;
+                r = 255;
+                g = Math.floor(255 * (1 - t));
+                b = 0;
+            } else {
+                const t = (norm - 0.8) / 0.2;
+                r = Math.floor(250 - (250 - 128) * t);
+                g = 0;
+                b = 0;
+            }
+
+            return { r, g, b };
+        }
+
+        // Initialize canvas
+        function initializeCanvas(solver) {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+
+            // Set canvas size to match grid
+            canvas.width = solver.nx;
+            canvas.height = solver.ny;
+
+            // Calculate global temperature range
+            const allTemps = [
+                solver.T_top - 273.15,
+                solver.T_bottom - 273.15,
+                solver.T_left - 273.15,
+                solver.T_right - 273.15
+            ];
+            T_min_global = Math.min(...allTemps);
+            T_max_global = Math.max(...allTemps);
+        }
+
+        // Render temperature field to canvas
+        function renderCanvas(solver) {
+            const z = solver.getTemperatureField(true);
+            const imageData = ctx.createImageData(solver.nx, solver.ny);
+
+            // Draw each pixel
+            for (let j = 0; j < solver.ny; j++) {
+                for (let i = 0; i < solver.nx; i++) {
+                    const temp = z[solver.ny - 1 - j][i]; // Flip y-axis
+                    const color = temperatureToColor(temp, T_min_global, T_max_global);
+
+                    const idx = (j * solver.nx + i) * 4;
+                    imageData.data[idx] = color.r;
+                    imageData.data[idx + 1] = color.g;
+                    imageData.data[idx + 2] = color.b;
+                    imageData.data[idx + 3] = 255; // Alpha
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
         }
 
         class HeatTransferSolver {
@@ -633,8 +734,8 @@
             document.getElementById('fourierText').textContent =
                 `Fo_x=${solver.Fo_x.toFixed(4)}, Fo_y=${solver.Fo_y.toFixed(4)}, Sum=${(solver.Fo_x + solver.Fo_y).toFixed(4)}`;
 
-            // Initialize plot
-            initializePlot(solver);
+            // Initialize canvas
+            initializeCanvas(solver);
 
             // Start animation
             animate();
@@ -653,100 +754,6 @@
             document.getElementById('statusText').textContent = 'Stopped';
         }
 
-        function initializePlot(solver) {
-            const z = solver.getTemperatureField(true);  // Get in Celsius
-
-            // Find min and max temperature for color scale (in Celsius)
-            const allTemps = [
-                solver.T_top - 273.15,
-                solver.T_bottom - 273.15,
-                solver.T_left - 273.15,
-                solver.T_right - 273.15
-            ];
-            const T_min = Math.min(...allTemps);
-            const T_max = Math.max(...allTemps);
-
-            const data = [{
-                z: z,
-                type: 'heatmap',
-                colorscale: [
-                    [0, 'rgb(0,0,131)'],      // Deep blue (cold)
-                    [0.2, 'rgb(0,60,170)'],
-                    [0.4, 'rgb(5,255,255)'],  // Cyan
-                    [0.6, 'rgb(255,255,0)'],  // Yellow
-                    [0.8, 'rgb(250,0,0)'],    // Red
-                    [1, 'rgb(128,0,0)']       // Dark red (hot)
-                ],
-                zmin: T_min,
-                zmax: T_max,
-                colorbar: {
-                    title: {
-                        text: 'T [°C]',
-                        font: { color: '#999', size: 11 }
-                    },
-                    titleside: 'right',
-                    tickmode: 'linear',
-                    tick0: T_min,
-                    dtick: (T_max - T_min) / 10,
-                    tickfont: { color: '#666', size: 10 },
-                    outlinecolor: '#333',
-                    outlinewidth: 1,
-                    bgcolor: '#000'
-                }
-            }];
-
-            const layout = {
-                title: {
-                    text: `t = ${solver.currentTime.toFixed(2)} s`,
-                    font: { color: '#ffffff', size: 14, family: 'monospace' },
-                    x: 0.02,
-                    xanchor: 'left'
-                },
-                xaxis: {
-                    title: { text: 'x [m]', font: { color: '#999', size: 11 } },
-                    range: [0, solver.L],
-                    tickmode: 'linear',
-                    tick0: 0,
-                    dtick: solver.L / 5,
-                    gridcolor: '#222',
-                    zerolinecolor: '#333',
-                    color: '#666'
-                },
-                yaxis: {
-                    title: { text: 'y [m]', font: { color: '#999', size: 11 } },
-                    range: [0, solver.W],
-                    tickmode: 'linear',
-                    tick0: 0,
-                    dtick: solver.W / 5,
-                    scaleanchor: 'x',
-                    gridcolor: '#222',
-                    zerolinecolor: '#333',
-                    color: '#666'
-                },
-                paper_bgcolor: '#000000',
-                plot_bgcolor: '#000000',
-                autosize: true,
-                margin: { t: 40, r: 120, b: 50, l: 60 }
-            };
-
-            const config = {
-                responsive: true,
-                displayModeBar: true,
-                displaylogo: false
-            };
-
-            Plotly.newPlot('plot', data, layout, config);
-        }
-
-        function updatePlot(solver) {
-            const z = solver.getTemperatureField(true);  // Get in Celsius
-
-            Plotly.update('plot', {
-                z: [z]
-            }, {
-                'title.text': `t = ${solver.currentTime.toFixed(2)} s`
-            });
-        }
 
         function animate() {
             if (!isRunning || solver.currentTime >= solver.totalTime) {
@@ -765,8 +772,8 @@
                 solver.step();
             }
 
-            // Update plot every frame
-            updatePlot(solver);
+            // Render canvas every frame
+            renderCanvas(solver);
 
             // Capture frame for video (60 frames for smooth playback, fast encoding with MediaRecorder)
             if (capturedFrames.length < 60 && Math.floor(solver.currentTime / solver.totalTime * 60) > capturedFrames.length) {
@@ -781,15 +788,9 @@
             animationId = requestAnimationFrame(animate);
         }
 
-        async function captureFrame() {
-            const plotDiv = document.getElementById('plot');
-
-            // Convert plot to image data (high resolution for better video quality)
-            const imgData = await Plotly.toImage(plotDiv, {
-                format: 'png',
-                width: 800,
-                height: 600
-            });
+        function captureFrame() {
+            // Capture canvas as PNG data URL
+            const imgData = canvas.toDataURL('image/png');
 
             capturedFrames.push(imgData);
             frameCaptureTimes.push(solver.currentTime);
@@ -801,14 +802,17 @@
             }
 
             try {
-                // Create canvas for video encoding
-                const canvas = document.createElement('canvas');
-                canvas.width = 800;
-                canvas.height = 600;
-                const ctx = canvas.getContext('2d');
+                // Create canvas for video encoding (scaled up from grid resolution)
+                const videoCanvas = document.createElement('canvas');
+                videoCanvas.width = 800;
+                videoCanvas.height = 800;
+                const videoCtx = videoCanvas.getContext('2d');
+
+                // Disable image smoothing for pixelated look
+                videoCtx.imageSmoothingEnabled = false;
 
                 // Create MediaRecorder stream from canvas
-                const stream = canvas.captureStream(30); // 30 FPS
+                const stream = videoCanvas.captureStream(30); // 30 FPS
                 const mediaRecorder = new MediaRecorder(stream, {
                     mimeType: 'video/webm;codecs=vp9', // VP9 for better compatibility, falls back to VP8
                     videoBitsPerSecond: 2500000 // 2.5 Mbps for good quality
@@ -843,7 +847,8 @@
                     const img = new Image();
                     await new Promise((resolve) => {
                         img.onload = async () => {
-                            ctx.drawImage(img, 0, 0, 800, 600);
+                            // Scale up the small canvas image to fill video canvas
+                            videoCtx.drawImage(img, 0, 0, 800, 800);
                             // Wait for frame delay to control playback speed
                             await new Promise(r => setTimeout(r, frameDelay));
                             resolve();
