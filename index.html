@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2D Transient Heat Transfer Simulator</title>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
     <style>
         * {
             margin: 0;
@@ -171,7 +170,7 @@
             border-color: #cc0000;
         }
 
-        .gif-preview {
+        .video-preview {
             position: fixed;
             top: 50%;
             left: 50%;
@@ -186,7 +185,7 @@
             max-height: 90%;
         }
 
-        .gif-preview h3 {
+        .video-preview h3 {
             color: #fff;
             margin-bottom: 20px;
             font-size: 0.9em;
@@ -194,12 +193,12 @@
             letter-spacing: 0.1em;
         }
 
-        .gif-preview img {
+        .video-preview video {
             max-width: 100%;
             border: 1px solid #333;
         }
 
-        .gif-actions {
+        .video-actions {
             margin-top: 20px;
             display: flex;
             gap: 10px;
@@ -407,12 +406,12 @@
         </div>
     </div>
 
-    <div class="gif-preview" id="gifPreview">
-        <h3>Generated GIF</h3>
-        <img id="gifImage" src="" alt="Generated GIF">
-        <div class="gif-actions">
-            <button class="btn-small" onclick="downloadGIF()">Download</button>
-            <button class="btn-small" onclick="closeGifPreview()">Close</button>
+    <div class="video-preview" id="videoPreview">
+        <h3>Generated Video</h3>
+        <video id="videoPlayer" controls loop autoplay></video>
+        <div class="video-actions">
+            <button class="btn-small" onclick="downloadVideo()">Download MP4</button>
+            <button class="btn-small" onclick="closeVideoPreview()">Close</button>
         </div>
     </div>
 
@@ -421,8 +420,7 @@
         let isRunning = false;
         let capturedFrames = [];
         let frameCaptureTimes = [];
-        let gifEncoder = null;
-        let gifBlob = null;  // Store the generated GIF blob
+        let videoBlob = null;  // Store the generated video blob
 
         // Material properties database
         const materialProperties = {
@@ -623,8 +621,8 @@
             capturedFrames = [];
             frameCaptureTimes = [];
 
-            // Hide GIF preview from previous run
-            document.getElementById('gifPreview').style.display = 'none';
+            // Hide video preview from previous run
+            document.getElementById('videoPreview').style.display = 'none';
 
             // Update UI
             isRunning = true;
@@ -755,8 +753,8 @@
                 if (solver.currentTime >= solver.totalTime) {
                     stopSimulation();
                     document.getElementById('statusText').textContent = 'Completed';
-                    // Automatically generate GIF when simulation completes
-                    exportGIF();
+                    // Automatically generate video when simulation completes
+                    exportVideo();
                 }
                 return;
             }
@@ -770,8 +768,8 @@
             // Update plot every frame
             updatePlot(solver);
 
-            // Capture frame for GIF (limit to 30 frames for faster GIF generation on mobile)
-            if (capturedFrames.length < 30 && Math.floor(solver.currentTime / solver.totalTime * 30) > capturedFrames.length) {
+            // Capture frame for video (60 frames for smooth playback, fast encoding with MediaRecorder)
+            if (capturedFrames.length < 60 && Math.floor(solver.currentTime / solver.totalTime * 60) > capturedFrames.length) {
                 captureFrame();
             }
 
@@ -786,98 +784,109 @@
         async function captureFrame() {
             const plotDiv = document.getElementById('plot');
 
-            // Convert plot to image data (reduced resolution for faster GIF encoding)
+            // Convert plot to image data (high resolution for better video quality)
             const imgData = await Plotly.toImage(plotDiv, {
                 format: 'png',
-                width: 640,
-                height: 480
+                width: 800,
+                height: 600
             });
 
             capturedFrames.push(imgData);
             frameCaptureTimes.push(solver.currentTime);
         }
 
-        async function exportGIF() {
+        async function exportVideo() {
             if (capturedFrames.length === 0) {
                 return; // Silently return if no frames
             }
 
             try {
-                // Create GIF encoder (workers: 0 = no web workers, runs on main thread)
-                // This avoids cross-origin security warnings on iOS Safari/Firefox
-                // Optimized settings: reduced resolution, medium quality for faster encoding
-                const gif = new GIF({
-                    workers: 0,
-                    quality: 20,  // 1-30 scale, higher = faster but lower quality (20 = medium)
-                    width: 640,
-                    height: 480
+                // Create canvas for video encoding
+                const canvas = document.createElement('canvas');
+                canvas.width = 800;
+                canvas.height = 600;
+                const ctx = canvas.getContext('2d');
+
+                // Create MediaRecorder stream from canvas
+                const stream = canvas.captureStream(30); // 30 FPS
+                const mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'video/webm;codecs=vp9', // VP9 for better compatibility, falls back to VP8
+                    videoBitsPerSecond: 2500000 // 2.5 Mbps for good quality
                 });
 
-                // Add frames to GIF
+                const chunks = [];
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) {
+                        chunks.push(e.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    // Create video blob
+                    videoBlob = new Blob(chunks, { type: 'video/webm' });
+
+                    // Display video in preview
+                    const url = URL.createObjectURL(videoBlob);
+                    const videoPlayer = document.getElementById('videoPlayer');
+                    videoPlayer.src = url;
+
+                    // Show preview section
+                    document.getElementById('videoPreview').style.display = 'block';
+                };
+
+                // Start recording
+                mediaRecorder.start();
+
+                // Draw frames to canvas sequentially
+                const frameDelay = 100; // 100ms per frame = ~10 FPS playback
                 for (let i = 0; i < capturedFrames.length; i++) {
                     const img = new Image();
                     await new Promise((resolve) => {
-                        img.onload = () => {
-                            // Create canvas to draw image
-                            const canvas = document.createElement('canvas');
-                            canvas.width = 640;
-                            canvas.height = 480;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0);
-
-                            // Add frame with delay
-                            gif.addFrame(canvas, {delay: 200});  // 200ms per frame
-
+                        img.onload = async () => {
+                            ctx.drawImage(img, 0, 0, 800, 600);
+                            // Wait for frame delay to control playback speed
+                            await new Promise(r => setTimeout(r, frameDelay));
                             resolve();
                         };
                         img.src = capturedFrames[i];
                     });
                 }
 
-                // Render GIF
-                gif.on('finished', (blob) => {
-                    // Store blob for download later
-                    gifBlob = blob;
-
-                    // Display GIF in preview
-                    const url = URL.createObjectURL(blob);
-                    const gifImage = document.getElementById('gifImage');
-                    gifImage.src = url;
-
-                    // Show preview section
-                    document.getElementById('gifPreview').style.display = 'block';
-                });
-
-                gif.render();
+                // Stop recording
+                mediaRecorder.stop();
 
             } catch (error) {
-                console.error('Error creating GIF:', error);
+                console.error('Error creating video:', error);
+                // Fallback: try with different codec
+                if (error.name === 'NotSupportedError') {
+                    console.log('VP9 not supported, video export unavailable');
+                }
             }
         }
 
-        function downloadGIF() {
-            if (!gifBlob) {
-                alert('No GIF available to download.');
+        function downloadVideo() {
+            if (!videoBlob) {
+                alert('No video available to download.');
                 return;
             }
 
-            // Download GIF
-            const url = URL.createObjectURL(gifBlob);
+            // Download video
+            const url = URL.createObjectURL(videoBlob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'heat_transfer_simulation.gif';
+            a.download = 'heat_transfer_simulation.webm';
             a.click();
             URL.revokeObjectURL(url);
         }
 
-        function closeGifPreview() {
-            document.getElementById('gifPreview').style.display = 'none';
+        function closeVideoPreview() {
+            document.getElementById('videoPreview').style.display = 'none';
 
             // Clean up old blob URL
-            const gifImage = document.getElementById('gifImage');
-            if (gifImage.src) {
-                URL.revokeObjectURL(gifImage.src);
-                gifImage.src = '';
+            const videoPlayer = document.getElementById('videoPlayer');
+            if (videoPlayer.src) {
+                URL.revokeObjectURL(videoPlayer.src);
+                videoPlayer.src = '';
             }
         }
     </script>
