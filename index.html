@@ -46,29 +46,6 @@
             opacity: 0.9;
         }
 
-        .equation-box {
-            background: #f8f9fa;
-            border-left: 4px solid #667eea;
-            padding: 20px;
-            margin: 20px 30px;
-            border-radius: 5px;
-        }
-
-        .equation-box h3 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .equation {
-            background: white;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
-            font-size: 1.1em;
-            text-align: center;
-        }
-
         .content {
             display: grid;
             grid-template-columns: 350px 1fr;
@@ -218,19 +195,6 @@
         <div class="header">
             <h1>🔥 2D Transient Heat Transfer Simulator</h1>
             <p>Numerical Solution using Finite Difference Method</p>
-        </div>
-
-        <div class="equation-box">
-            <h3>📐 Governing Equation</h3>
-            <div class="equation">
-                ∂T/∂t = α(∂²T/∂x² + ∂²T/∂y²)
-            </div>
-            <div class="equation">
-                T<sub>i,j</sub><sup>n+1</sup> = T<sub>i,j</sub><sup>n</sup> + Fo<sub>x</sub>(T<sub>i+1,j</sub><sup>n</sup> - 2T<sub>i,j</sub><sup>n</sup> + T<sub>i-1,j</sub><sup>n</sup>) + Fo<sub>y</sub>(T<sub>i,j+1</sub><sup>n</sup> - 2T<sub>i,j</sub><sup>n</sup> + T<sub>i,j-1</sub><sup>n</sup>)
-            </div>
-            <p style="text-align: center; margin-top: 10px; color: #666;">
-                <strong>Stability:</strong> Fo<sub>x</sub> + Fo<sub>y</sub> ≤ 0.5
-            </p>
         </div>
 
         <div class="content">
