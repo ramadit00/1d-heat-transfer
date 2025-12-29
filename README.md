@@ -8,7 +8,8 @@ A web-based numerical simulator for solving 2D transient heat conduction problem
 - **Interactive Parameters**: Customize domain size, boundary conditions, material properties, and simulation time
 - **Numerical Stability**: Automatic time step calculation ensuring stability (Fourier number criterion)
 - **Responsive Visualization**: Smooth animated heatmap with color-coded temperature distribution
-- **All SI Units**: Length (m), Temperature (K), Thermal conductivity (W/m·K), Time (s)
+- **GIF Export**: Save simulation results as animated GIF files
+- **All SI Units**: Length (m), Temperature (°C), Thermal conductivity (W/m·K), Time (s)
 
 ## 📐 Mathematical Background
 
@@ -60,7 +61,7 @@ Simply open `index.html` in a modern web browser. No installation or server requ
    - Length (x-direction) [m]
    - Width (y-direction) [m]
 
-2. **Boundary Conditions** [K]:
+2. **Boundary Conditions** [°C]:
    - Top boundary temperature
    - Bottom boundary temperature
    - Left boundary temperature
@@ -83,7 +84,7 @@ Simply open `index.html` in a modern web browser. No installation or server requ
 - Thermal conductivity: 50 W/m·K
 - Density: 7800 kg/m³
 - Specific heat: 500 J/kg·K
-- Boundary: Hot top (373 K), Cold bottom (273 K), Moderate sides (300 K)
+- Boundary: Hot top (100 °C), Cold bottom (0 °C), Moderate sides (27 °C)
 
 #### Case 2: Aluminum Plate
 - Material: Aluminum
@@ -102,7 +103,11 @@ Simply open `index.html` in a modern web browser. No installation or server requ
 The simulator displays:
 - **Animated heatmap**: Color-coded temperature distribution (blue=cold, red=hot)
 - **Real-time status**: Current simulation time, progress, time step, and Fourier numbers
-- **Interactive controls**: Start/Stop simulation
+- **Interactive controls**: Start/Stop simulation, Export to GIF
+
+### Exporting Results
+
+After running a simulation, click the "Save as GIF" button to export the animation as an animated GIF file. The GIF will contain up to 100 frames captured throughout the simulation, making it easy to share or present your results.
 
 ## 🔬 Technical Details
 

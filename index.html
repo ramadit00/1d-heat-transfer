@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2D Transient Heat Transfer Simulator</title>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
     <style>
         * {
             margin: 0;
@@ -162,6 +163,11 @@
             margin-top: 5px;
         }
 
+        .btn-gif {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            margin-top: 5px;
+        }
+
         .visualization-panel {
             background: #f8f9fa;
             padding: 25px;
@@ -244,22 +250,22 @@
                 </div>
 
                 <div class="input-group">
-                    <label>Boundary Temperatures [K]</label>
+                    <label>Boundary Temperatures [°C]</label>
                     <div class="boundary-group">
                         <div>
-                            <input type="number" id="temp_top" value="373" step="1" placeholder="Top">
+                            <input type="number" id="temp_top" value="100" step="1" placeholder="Top">
                             <small>Top (y=width)</small>
                         </div>
                         <div>
-                            <input type="number" id="temp_bottom" value="273" step="1" placeholder="Bottom">
+                            <input type="number" id="temp_bottom" value="0" step="1" placeholder="Bottom">
                             <small>Bottom (y=0)</small>
                         </div>
                         <div>
-                            <input type="number" id="temp_left" value="300" step="1" placeholder="Left">
+                            <input type="number" id="temp_left" value="27" step="1" placeholder="Left">
                             <small>Left (x=0)</small>
                         </div>
                         <div>
-                            <input type="number" id="temp_right" value="300" step="1" placeholder="Right">
+                            <input type="number" id="temp_right" value="27" step="1" placeholder="Right">
                             <small>Right (x=length)</small>
                         </div>
                     </div>
@@ -303,6 +309,7 @@
 
                 <button class="btn" id="startBtn" onclick="startSimulation()">▶️ Start Simulation</button>
                 <button class="btn btn-stop" id="stopBtn" onclick="stopSimulation()" disabled>⏹️ Stop</button>
+                <button class="btn btn-gif" id="gifBtn" onclick="exportGIF()" disabled>📸 Save as GIF</button>
 
                 <div class="status" id="status">
                     <div class="status-item">
@@ -337,6 +344,9 @@
     <script>
         let animationId = null;
         let isRunning = false;
+        let capturedFrames = [];
+        let frameCaptureTimes = [];
+        let gifEncoder = null;
 
         class HeatTransferSolver {
             constructor(params) {
@@ -345,10 +355,13 @@
                 this.k = params.conductivity;     // Thermal conductivity
                 this.rho = params.density;        // Density
                 this.cp = params.specific_heat;   // Specific heat
-                this.T_top = params.temp_top;
-                this.T_bottom = params.temp_bottom;
-                this.T_left = params.temp_left;
-                this.T_right = params.temp_right;
+
+                // Convert Celsius to Kelvin for calculations
+                this.T_top = params.temp_top + 273.15;
+                this.T_bottom = params.temp_bottom + 273.15;
+                this.T_left = params.temp_left + 273.15;
+                this.T_right = params.temp_right + 273.15;
+
                 this.totalTime = params.sim_time;
                 this.nx = params.grid_x;
                 this.ny = params.grid_y;
@@ -441,13 +454,15 @@
                 this.currentTime += this.dt;
             }
 
-            getTemperatureField() {
+            getTemperatureField(inCelsius = true) {
                 // Return temperature field in format for Plotly (transposed for correct orientation)
                 const z = [];
                 for (let j = this.ny - 1; j >= 0; j--) {
                     const row = [];
                     for (let i = 0; i < this.nx; i++) {
-                        row.push(this.T[i][j]);
+                        // Convert to Celsius for display
+                        const temp = inCelsius ? this.T[i][j] - 273.15 : this.T[i][j];
+                        row.push(temp);
                     }
                     z.push(row);
                 }
@@ -460,7 +475,7 @@
         function startSimulation() {
             if (isRunning) return;
 
-            // Get parameters
+            // Get parameters (temperatures in Celsius)
             const params = {
                 length: parseFloat(document.getElementById('length').value),
                 width: parseFloat(document.getElementById('width').value),
@@ -479,10 +494,15 @@
             // Initialize solver
             solver = new HeatTransferSolver(params);
 
+            // Reset frame capture
+            capturedFrames = [];
+            frameCaptureTimes = [];
+
             // Update UI
             isRunning = true;
             document.getElementById('startBtn').disabled = true;
             document.getElementById('stopBtn').disabled = false;
+            document.getElementById('gifBtn').disabled = true;
             document.getElementById('statusText').textContent = 'Running...';
             document.getElementById('dtText').textContent = solver.dt.toExponential(3) + ' s';
             document.getElementById('fourierText').textContent =
@@ -503,16 +523,24 @@
             }
             document.getElementById('startBtn').disabled = false;
             document.getElementById('stopBtn').disabled = true;
+
+            // Enable GIF export if we have frames
+            if (capturedFrames.length > 0) {
+                document.getElementById('gifBtn').disabled = false;
+            }
+
             document.getElementById('statusText').textContent = 'Stopped';
         }
 
         function initializePlot(solver) {
-            const z = solver.getTemperatureField();
+            const z = solver.getTemperatureField(true);  // Get in Celsius
 
-            // Find min and max temperature for color scale
+            // Find min and max temperature for color scale (in Celsius)
             const allTemps = [
-                solver.T_top, solver.T_bottom,
-                solver.T_left, solver.T_right
+                solver.T_top - 273.15,
+                solver.T_bottom - 273.15,
+                solver.T_left - 273.15,
+                solver.T_right - 273.15
             ];
             const T_min = Math.min(...allTemps);
             const T_max = Math.max(...allTemps);
@@ -531,7 +559,7 @@
                 zmin: T_min,
                 zmax: T_max,
                 colorbar: {
-                    title: 'Temperature [K]',
+                    title: 'Temperature [°C]',
                     titleside: 'right',
                     tickmode: 'linear',
                     tick0: T_min,
@@ -570,7 +598,7 @@
         }
 
         function updatePlot(solver) {
-            const z = solver.getTemperatureField();
+            const z = solver.getTemperatureField(true);  // Get in Celsius
 
             Plotly.update('plot', {
                 z: [z]
@@ -597,12 +625,94 @@
             // Update plot every frame
             updatePlot(solver);
 
+            // Capture frame for GIF (every ~100 frames to keep file size manageable)
+            if (capturedFrames.length < 100 && Math.floor(solver.currentTime / solver.totalTime * 100) > capturedFrames.length) {
+                captureFrame();
+            }
+
             // Update status
             document.getElementById('timeText').textContent = solver.currentTime.toFixed(2) + ' s';
             const progress = (solver.currentTime / solver.totalTime * 100).toFixed(1);
             document.getElementById('progressText').textContent = progress + '%';
 
             animationId = requestAnimationFrame(animate);
+        }
+
+        async function captureFrame() {
+            const plotDiv = document.getElementById('plot');
+
+            // Convert plot to image data
+            const imgData = await Plotly.toImage(plotDiv, {
+                format: 'png',
+                width: 800,
+                height: 600
+            });
+
+            capturedFrames.push(imgData);
+            frameCaptureTimes.push(solver.currentTime);
+        }
+
+        async function exportGIF() {
+            if (capturedFrames.length === 0) {
+                alert('No frames captured. Please run a simulation first.');
+                return;
+            }
+
+            document.getElementById('gifBtn').disabled = true;
+            document.getElementById('statusText').textContent = 'Creating GIF...';
+
+            try {
+                // Create GIF encoder
+                const gif = new GIF({
+                    workers: 2,
+                    quality: 10,
+                    width: 800,
+                    height: 600,
+                    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+                });
+
+                // Add frames to GIF
+                for (let i = 0; i < capturedFrames.length; i++) {
+                    const img = new Image();
+                    await new Promise((resolve) => {
+                        img.onload = () => {
+                            // Create canvas to draw image
+                            const canvas = document.createElement('canvas');
+                            canvas.width = 800;
+                            canvas.height = 600;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+
+                            // Add frame with delay
+                            gif.addFrame(canvas, {delay: 200});  // 200ms per frame
+                            resolve();
+                        };
+                        img.src = capturedFrames[i];
+                    });
+                }
+
+                // Render GIF
+                gif.on('finished', (blob) => {
+                    // Download GIF
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'heat_transfer_simulation.gif';
+                    a.click();
+                    URL.revokeObjectURL(url);
+
+                    document.getElementById('statusText').textContent = 'GIF saved!';
+                    document.getElementById('gifBtn').disabled = false;
+                });
+
+                gif.render();
+
+            } catch (error) {
+                console.error('Error creating GIF:', error);
+                alert('Error creating GIF: ' + error.message);
+                document.getElementById('gifBtn').disabled = false;
+                document.getElementById('statusText').textContent = 'Error creating GIF';
+            }
         }
     </script>
 </body>
