@@ -171,17 +171,6 @@
             border-color: #cc0000;
         }
 
-        .btn-gif {
-            background: transparent;
-            border-color: #ffffff;
-            color: #ffffff;
-        }
-
-        .btn-gif:hover {
-            background: #ffffff;
-            color: #000000;
-        }
-
         .gif-preview {
             position: fixed;
             top: 50%;
@@ -384,7 +373,6 @@
                 <div class="action-bar">
                     <button class="btn" id="startBtn" onclick="startSimulation()">Start</button>
                     <button class="btn btn-stop" id="stopBtn" onclick="stopSimulation()" disabled>Stop</button>
-                    <button class="btn btn-gif" id="gifBtn" onclick="exportGIF()" disabled>Export GIF</button>
 
                     <div style="flex: 1;"></div>
 
@@ -642,7 +630,6 @@
             isRunning = true;
             document.getElementById('startBtn').disabled = true;
             document.getElementById('stopBtn').disabled = false;
-            document.getElementById('gifBtn').disabled = true;
             document.getElementById('statusText').textContent = 'Running...';
             document.getElementById('dtText').textContent = solver.dt.toExponential(3) + ' s';
             document.getElementById('fourierText').textContent =
@@ -768,6 +755,8 @@
                 if (solver.currentTime >= solver.totalTime) {
                     stopSimulation();
                     document.getElementById('statusText').textContent = 'Completed';
+                    // Automatically generate GIF when simulation completes
+                    exportGIF();
                 }
                 return;
             }
@@ -784,11 +773,6 @@
             // Capture frame for GIF (limit to 30 frames for faster GIF generation on mobile)
             if (capturedFrames.length < 30 && Math.floor(solver.currentTime / solver.totalTime * 30) > capturedFrames.length) {
                 captureFrame();
-            }
-
-            // Enable GIF button as soon as we have frames
-            if (capturedFrames.length > 0 && document.getElementById('gifBtn').disabled) {
-                document.getElementById('gifBtn').disabled = false;
             }
 
             // Update status
@@ -815,12 +799,8 @@
 
         async function exportGIF() {
             if (capturedFrames.length === 0) {
-                alert('No frames captured. Please run a simulation first.');
-                return;
+                return; // Silently return if no frames
             }
-
-            document.getElementById('gifBtn').disabled = true;
-            document.getElementById('statusText').textContent = 'Creating GIF (0%)...';
 
             try {
                 // Create GIF encoder (workers: 0 = no web workers, runs on main thread)
@@ -833,7 +813,7 @@
                     height: 480
                 });
 
-                // Add frames to GIF with progress indicator
+                // Add frames to GIF
                 for (let i = 0; i < capturedFrames.length; i++) {
                     const img = new Image();
                     await new Promise((resolve) => {
@@ -848,21 +828,11 @@
                             // Add frame with delay
                             gif.addFrame(canvas, {delay: 200});  // 200ms per frame
 
-                            // Update progress
-                            const progress = Math.round((i + 1) / capturedFrames.length * 50);
-                            document.getElementById('statusText').textContent = `Creating GIF (${progress}%)...`;
-
                             resolve();
                         };
                         img.src = capturedFrames[i];
                     });
                 }
-
-                // Show rendering progress
-                gif.on('progress', (progress) => {
-                    const percent = Math.round(50 + progress * 50); // 50-100%
-                    document.getElementById('statusText').textContent = `Creating GIF (${percent}%)...`;
-                });
 
                 // Render GIF
                 gif.on('finished', (blob) => {
@@ -876,23 +846,12 @@
 
                     // Show preview section
                     document.getElementById('gifPreview').style.display = 'block';
-
-                    document.getElementById('statusText').textContent = 'GIF created!';
-                    document.getElementById('gifBtn').disabled = false;
-
-                    // Scroll to preview
-                    document.getElementById('gifPreview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 });
 
-                // Update status before rendering starts
-                document.getElementById('statusText').textContent = 'Creating GIF (50%)...';
                 gif.render();
 
             } catch (error) {
                 console.error('Error creating GIF:', error);
-                alert('Error creating GIF: ' + error.message);
-                document.getElementById('gifBtn').disabled = false;
-                document.getElementById('statusText').textContent = 'Error creating GIF';
             }
         }
 
