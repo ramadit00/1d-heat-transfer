@@ -626,13 +626,13 @@
             document.getElementById('statusText').textContent = 'Creating GIF...';
 
             try {
-                // Create GIF encoder
+                // Create GIF encoder (workers: 0 = no web workers, runs on main thread)
+                // This avoids cross-origin security warnings on iOS Safari/Firefox
                 const gif = new GIF({
-                    workers: 2,
+                    workers: 0,
                     quality: 10,
                     width: 800,
-                    height: 600,
-                    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+                    height: 600
                 });
 
                 // Add frames to GIF
