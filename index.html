@@ -145,6 +145,49 @@
             margin-top: 5px;
         }
 
+        .gif-preview {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .gif-preview h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .gif-preview img {
+            max-width: 100%;
+            border-radius: 5px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .gif-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-small {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-small:hover {
+            transform: translateY(-2px);
+        }
+
         .visualization-panel {
             background: #f8f9fa;
             padding: 25px;
@@ -273,7 +316,16 @@
 
                 <button class="btn" id="startBtn" onclick="startSimulation()">▶️ Start Simulation</button>
                 <button class="btn btn-stop" id="stopBtn" onclick="stopSimulation()" disabled>⏹️ Stop</button>
-                <button class="btn btn-gif" id="gifBtn" onclick="exportGIF()" disabled>📸 Save as GIF</button>
+                <button class="btn btn-gif" id="gifBtn" onclick="exportGIF()" disabled>📸 Create GIF</button>
+
+                <div class="gif-preview" id="gifPreview">
+                    <h3>🎬 Generated GIF Animation</h3>
+                    <img id="gifImage" src="" alt="Generated GIF">
+                    <div class="gif-actions">
+                        <button class="btn-small" onclick="downloadGIF()">💾 Download</button>
+                        <button class="btn-small" onclick="closeGifPreview()">✕ Close</button>
+                    </div>
+                </div>
 
                 <div class="status" id="status">
                     <div class="status-item">
@@ -311,6 +363,7 @@
         let capturedFrames = [];
         let frameCaptureTimes = [];
         let gifEncoder = null;
+        let gifBlob = null;  // Store the generated GIF blob
 
         class HeatTransferSolver {
             constructor(params) {
@@ -461,6 +514,9 @@
             // Reset frame capture
             capturedFrames = [];
             frameCaptureTimes = [];
+
+            // Hide GIF preview from previous run
+            document.getElementById('gifPreview').style.display = 'none';
 
             // Update UI
             isRunning = true;
@@ -657,16 +713,22 @@
 
                 // Render GIF
                 gif.on('finished', (blob) => {
-                    // Download GIF
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'heat_transfer_simulation.gif';
-                    a.click();
-                    URL.revokeObjectURL(url);
+                    // Store blob for download later
+                    gifBlob = blob;
 
-                    document.getElementById('statusText').textContent = 'GIF saved!';
+                    // Display GIF in preview
+                    const url = URL.createObjectURL(blob);
+                    const gifImage = document.getElementById('gifImage');
+                    gifImage.src = url;
+
+                    // Show preview section
+                    document.getElementById('gifPreview').style.display = 'block';
+
+                    document.getElementById('statusText').textContent = 'GIF created!';
                     document.getElementById('gifBtn').disabled = false;
+
+                    // Scroll to preview
+                    document.getElementById('gifPreview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 });
 
                 gif.render();
@@ -676,6 +738,32 @@
                 alert('Error creating GIF: ' + error.message);
                 document.getElementById('gifBtn').disabled = false;
                 document.getElementById('statusText').textContent = 'Error creating GIF';
+            }
+        }
+
+        function downloadGIF() {
+            if (!gifBlob) {
+                alert('No GIF available to download.');
+                return;
+            }
+
+            // Download GIF
+            const url = URL.createObjectURL(gifBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'heat_transfer_simulation.gif';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function closeGifPreview() {
+            document.getElementById('gifPreview').style.display = 'none';
+
+            // Clean up old blob URL
+            const gifImage = document.getElementById('gifImage');
+            if (gifImage.src) {
+                URL.revokeObjectURL(gifImage.src);
+                gifImage.src = '';
             }
         }
     </script>
