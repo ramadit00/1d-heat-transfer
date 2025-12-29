@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Transient Heat Transfer Simulator</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .equation-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 30px;
+            border-radius: 5px;
+        }
+
+        .equation-box h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .equation {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .input-panel {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            height: fit-content;
+        }
+
+        .input-panel h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.95em;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-group small {
+            display: block;
+            color: #888;
+            margin-top: 3px;
+            font-size: 0.85em;
+        }
+
+        .boundary-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            margin-top: 5px;
+        }
+
+        .visualization-panel {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        #plot {
+            width: 100%;
+            height: 600px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 0.95em;
+        }
+
+        .status-label {
+            color: #555;
+            font-weight: 600;
+        }
+
+        .status-value {
+            color: #333;
+            font-family: 'Courier New', monospace;
+        }
+
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 2D Transient Heat Transfer Simulator</h1>
+            <p>Numerical Solution using Finite Difference Method</p>
+        </div>
+
+        <div class="equation-box">
+            <h3>📐 Governing Equation</h3>
+            <div class="equation">
+                ∂T/∂t = α(∂²T/∂x² + ∂²T/∂y²)
+            </div>
+            <div class="equation">
+                T<sub>i,j</sub><sup>n+1</sup> = T<sub>i,j</sub><sup>n</sup> + Fo<sub>x</sub>(T<sub>i+1,j</sub><sup>n</sup> - 2T<sub>i,j</sub><sup>n</sup> + T<sub>i-1,j</sub><sup>n</sup>) + Fo<sub>y</sub>(T<sub>i,j+1</sub><sup>n</sup> - 2T<sub>i,j</sub><sup>n</sup> + T<sub>i,j-1</sub><sup>n</sup>)
+            </div>
+            <p style="text-align: center; margin-top: 10px; color: #666;">
+                <strong>Stability:</strong> Fo<sub>x</sub> + Fo<sub>y</sub> ≤ 0.5
+            </p>
+        </div>
+
+        <div class="content">
+            <div class="input-panel">
+                <h2>⚙️ Parameters</h2>
+
+                <div class="input-group">
+                    <label>Length (x-direction) [m]</label>
+                    <input type="number" id="length" value="1.0" step="0.1" min="0.1">
+                    <small>Domain length in x-direction</small>
+                </div>
+
+                <div class="input-group">
+                    <label>Width (y-direction) [m]</label>
+                    <input type="number" id="width" value="1.0" step="0.1" min="0.1">
+                    <small>Domain length in y-direction</small>
+                </div>
+
+                <div class="input-group">
+                    <label>Boundary Temperatures [K]</label>
+                    <div class="boundary-group">
+                        <div>
+                            <input type="number" id="temp_top" value="373" step="1" placeholder="Top">
+                            <small>Top (y=width)</small>
+                        </div>
+                        <div>
+                            <input type="number" id="temp_bottom" value="273" step="1" placeholder="Bottom">
+                            <small>Bottom (y=0)</small>
+                        </div>
+                        <div>
+                            <input type="number" id="temp_left" value="300" step="1" placeholder="Left">
+                            <small>Left (x=0)</small>
+                        </div>
+                        <div>
+                            <input type="number" id="temp_right" value="300" step="1" placeholder="Right">
+                            <small>Right (x=length)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Thermal Conductivity [W/m·K]</label>
+                    <input type="number" id="conductivity" value="50" step="1" min="0.1">
+                    <small>Material thermal conductivity</small>
+                </div>
+
+                <div class="input-group">
+                    <label>Density [kg/m³]</label>
+                    <input type="number" id="density" value="7800" step="100" min="1">
+                    <small>Material density</small>
+                </div>
+
+                <div class="input-group">
+                    <label>Specific Heat [J/kg·K]</label>
+                    <input type="number" id="specific_heat" value="500" step="10" min="1">
+                    <small>Material specific heat capacity</small>
+                </div>
+
+                <div class="input-group">
+                    <label>Simulation Time [s]</label>
+                    <input type="number" id="sim_time" value="100" step="10" min="1">
+                    <small>Total simulation duration</small>
+                </div>
+
+                <div class="input-group">
+                    <label>Grid Points (x)</label>
+                    <input type="number" id="grid_x" value="50" step="5" min="10" max="200">
+                    <small>Spatial discretization in x</small>
+                </div>
+
+                <div class="input-group">
+                    <label>Grid Points (y)</label>
+                    <input type="number" id="grid_y" value="50" step="5" min="10" max="200">
+                    <small>Spatial discretization in y</small>
+                </div>
+
+                <button class="btn" id="startBtn" onclick="startSimulation()">▶️ Start Simulation</button>
+                <button class="btn btn-stop" id="stopBtn" onclick="stopSimulation()" disabled>⏹️ Stop</button>
+
+                <div class="status" id="status">
+                    <div class="status-item">
+                        <span class="status-label">Status:</span>
+                        <span class="status-value" id="statusText">Ready</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Time:</span>
+                        <span class="status-value" id="timeText">0.00 s</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Progress:</span>
+                        <span class="status-value" id="progressText">0%</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Δt:</span>
+                        <span class="status-value" id="dtText">- s</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Fourier:</span>
+                        <span class="status-value" id="fourierText">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="visualization-panel">
+                <div id="plot"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let animationId = null;
+        let isRunning = false;
+
+        class HeatTransferSolver {
+            constructor(params) {
+                this.L = params.length;           // Length in x
+                this.W = params.width;            // Width in y
+                this.k = params.conductivity;     // Thermal conductivity
+                this.rho = params.density;        // Density
+                this.cp = params.specific_heat;   // Specific heat
+                this.T_top = params.temp_top;
+                this.T_bottom = params.temp_bottom;
+                this.T_left = params.temp_left;
+                this.T_right = params.temp_right;
+                this.totalTime = params.sim_time;
+                this.nx = params.grid_x;
+                this.ny = params.grid_y;
+
+                // Calculate thermal diffusivity
+                this.alpha = this.k / (this.rho * this.cp);
+
+                // Grid spacing
+                this.dx = this.L / (this.nx - 1);
+                this.dy = this.W / (this.ny - 1);
+
+                // Time step (stability criterion: Fo_x + Fo_y <= 0.5)
+                const fo_limit = 0.4; // Use 0.4 for safety margin
+                this.dt = fo_limit / (this.alpha * (1/(this.dx*this.dx) + 1/(this.dy*this.dy)));
+
+                this.Fo_x = this.alpha * this.dt / (this.dx * this.dx);
+                this.Fo_y = this.alpha * this.dt / (this.dy * this.dy);
+
+                // Initialize temperature field
+                this.T = this.initializeTemperature();
+                this.currentTime = 0;
+            }
+
+            initializeTemperature() {
+                // Initialize with linear interpolation between boundaries
+                const T = [];
+                for (let i = 0; i < this.nx; i++) {
+                    T[i] = [];
+                    for (let j = 0; j < this.ny; j++) {
+                        // Linear interpolation from boundaries
+                        const x_ratio = i / (this.nx - 1);
+                        const y_ratio = j / (this.ny - 1);
+
+                        // Average of boundary influences
+                        const T_x = (1 - x_ratio) * this.T_left + x_ratio * this.T_right;
+                        const T_y = (1 - y_ratio) * this.T_bottom + y_ratio * this.T_top;
+
+                        T[i][j] = (T_x + T_y) / 2;
+                    }
+                }
+
+                // Set boundary conditions
+                this.applyBoundaryConditions(T);
+                return T;
+            }
+
+            applyBoundaryConditions(T) {
+                // Left boundary (x = 0)
+                for (let j = 0; j < this.ny; j++) {
+                    T[0][j] = this.T_left;
+                }
+                // Right boundary (x = L)
+                for (let j = 0; j < this.ny; j++) {
+                    T[this.nx - 1][j] = this.T_right;
+                }
+                // Bottom boundary (y = 0)
+                for (let i = 0; i < this.nx; i++) {
+                    T[i][0] = this.T_bottom;
+                }
+                // Top boundary (y = W)
+                for (let i = 0; i < this.nx; i++) {
+                    T[i][this.ny - 1] = this.T_top;
+                }
+            }
+
+            step() {
+                const T_new = [];
+
+                // Copy old values
+                for (let i = 0; i < this.nx; i++) {
+                    T_new[i] = [...this.T[i]];
+                }
+
+                // Update interior points using explicit finite difference
+                for (let i = 1; i < this.nx - 1; i++) {
+                    for (let j = 1; j < this.ny - 1; j++) {
+                        const d2T_dx2 = this.T[i+1][j] - 2*this.T[i][j] + this.T[i-1][j];
+                        const d2T_dy2 = this.T[i][j+1] - 2*this.T[i][j] + this.T[i][j-1];
+
+                        T_new[i][j] = this.T[i][j] +
+                                      this.Fo_x * d2T_dx2 +
+                                      this.Fo_y * d2T_dy2;
+                    }
+                }
+
+                // Apply boundary conditions
+                this.applyBoundaryConditions(T_new);
+
+                this.T = T_new;
+                this.currentTime += this.dt;
+            }
+
+            getTemperatureField() {
+                // Return temperature field in format for Plotly (transposed for correct orientation)
+                const z = [];
+                for (let j = this.ny - 1; j >= 0; j--) {
+                    const row = [];
+                    for (let i = 0; i < this.nx; i++) {
+                        row.push(this.T[i][j]);
+                    }
+                    z.push(row);
+                }
+                return z;
+            }
+        }
+
+        let solver = null;
+
+        function startSimulation() {
+            if (isRunning) return;
+
+            // Get parameters
+            const params = {
+                length: parseFloat(document.getElementById('length').value),
+                width: parseFloat(document.getElementById('width').value),
+                temp_top: parseFloat(document.getElementById('temp_top').value),
+                temp_bottom: parseFloat(document.getElementById('temp_bottom').value),
+                temp_left: parseFloat(document.getElementById('temp_left').value),
+                temp_right: parseFloat(document.getElementById('temp_right').value),
+                conductivity: parseFloat(document.getElementById('conductivity').value),
+                density: parseFloat(document.getElementById('density').value),
+                specific_heat: parseFloat(document.getElementById('specific_heat').value),
+                sim_time: parseFloat(document.getElementById('sim_time').value),
+                grid_x: parseInt(document.getElementById('grid_x').value),
+                grid_y: parseInt(document.getElementById('grid_y').value)
+            };
+
+            // Initialize solver
+            solver = new HeatTransferSolver(params);
+
+            // Update UI
+            isRunning = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('statusText').textContent = 'Running...';
+            document.getElementById('dtText').textContent = solver.dt.toExponential(3) + ' s';
+            document.getElementById('fourierText').textContent =
+                `Fo_x=${solver.Fo_x.toFixed(4)}, Fo_y=${solver.Fo_y.toFixed(4)}, Sum=${(solver.Fo_x + solver.Fo_y).toFixed(4)}`;
+
+            // Initialize plot
+            initializePlot(solver);
+
+            // Start animation
+            animate();
+        }
+
+        function stopSimulation() {
+            isRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('statusText').textContent = 'Stopped';
+        }
+
+        function initializePlot(solver) {
+            const z = solver.getTemperatureField();
+
+            // Find min and max temperature for color scale
+            const allTemps = [
+                solver.T_top, solver.T_bottom,
+                solver.T_left, solver.T_right
+            ];
+            const T_min = Math.min(...allTemps);
+            const T_max = Math.max(...allTemps);
+
+            const data = [{
+                z: z,
+                type: 'heatmap',
+                colorscale: [
+                    [0, 'rgb(0,0,131)'],      // Deep blue (cold)
+                    [0.2, 'rgb(0,60,170)'],
+                    [0.4, 'rgb(5,255,255)'],  // Cyan
+                    [0.6, 'rgb(255,255,0)'],  // Yellow
+                    [0.8, 'rgb(250,0,0)'],    // Red
+                    [1, 'rgb(128,0,0)']       // Dark red (hot)
+                ],
+                zmin: T_min,
+                zmax: T_max,
+                colorbar: {
+                    title: 'Temperature [K]',
+                    titleside: 'right',
+                    tickmode: 'linear',
+                    tick0: T_min,
+                    dtick: (T_max - T_min) / 10
+                }
+            }];
+
+            const layout = {
+                title: `Temperature Distribution (t = ${solver.currentTime.toFixed(2)} s)`,
+                xaxis: {
+                    title: 'x [m]',
+                    range: [0, solver.L],
+                    tickmode: 'linear',
+                    tick0: 0,
+                    dtick: solver.L / 5
+                },
+                yaxis: {
+                    title: 'y [m]',
+                    range: [0, solver.W],
+                    tickmode: 'linear',
+                    tick0: 0,
+                    dtick: solver.W / 5,
+                    scaleanchor: 'x'
+                },
+                autosize: true,
+                margin: { t: 60, r: 100, b: 60, l: 60 }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false
+            };
+
+            Plotly.newPlot('plot', data, layout, config);
+        }
+
+        function updatePlot(solver) {
+            const z = solver.getTemperatureField();
+
+            Plotly.update('plot', {
+                z: [z]
+            }, {
+                title: `Temperature Distribution (t = ${solver.currentTime.toFixed(2)} s)`
+            });
+        }
+
+        function animate() {
+            if (!isRunning || solver.currentTime >= solver.totalTime) {
+                if (solver.currentTime >= solver.totalTime) {
+                    stopSimulation();
+                    document.getElementById('statusText').textContent = 'Completed';
+                }
+                return;
+            }
+
+            // Perform multiple steps per frame for speed
+            const stepsPerFrame = 10;
+            for (let i = 0; i < stepsPerFrame && solver.currentTime < solver.totalTime; i++) {
+                solver.step();
+            }
+
+            // Update plot every frame
+            updatePlot(solver);
+
+            // Update status
+            document.getElementById('timeText').textContent = solver.currentTime.toFixed(2) + ' s';
+            const progress = (solver.currentTime / solver.totalTime * 100).toFixed(1);
+            document.getElementById('progressText').textContent = progress + '%';
+
+            animationId = requestAnimationFrame(animate);
+        }
+    </script>
+</body>
+</html>
